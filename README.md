@@ -42,5 +42,27 @@ especially after the NIST announced an [initiative to
 standardize](http://csrc.nist.gov/Projects/Post-Quantum-Cryptography "NIST
 post-quantum cryptography project") quantum-safe cryptographic algorithms.
 
-The QUASIKOM project is supported by [Netidee](http://www.netidee.at "NetIdee
-Homepage").
+The project QUASIKOM ("Post-Quantum Secure Communication for the Internet of
+Things") lies thematically at the intersection of these two technological
+revolutions and aims to make the IoT resistant against cryptanalytic attacks
+with a quantum computer. More concretely, the goal of QUASIKOM is to develop a
+post-quantum secure version of the [Datagram Transport Layer Security
+(DTLS)](http://tools.ietf.org/html/rfc6347 "RFC6347") protocol, which is the
+de-facto standard for end-to-end authentication and encryption in the IoT. It
+is also planned to implement a prototype of such a "hardened" DTLS protocol,
+whereby the open-source software [TinyDTLS]
+(http://sourceforge.net/projects/tinydtls/ "TinyDTLS homn page") will be used
+as a starting point. TinyDTLS is aimed at resource-constrained IoT devices
+equipped with an 8, 16, or 32-bit microcontroller that is clocked with a
+frequency of a few MHz. The main task of the project is to implement an
+NTRU-based key establishment mechanism and its integration into TinyDTLS to
+replace the currently used RSA-based key transport and Diffie-Hellman key
+exchange, which can both be broken with a quantum computer.
+[NTRU](http://www.onboardsecurity.com/products/ntru-crypto "NTRU home page") is
+a well-studied lattice-based cryptosystem that combines high computational
+efficiency with relatively short key lengths, which makes it well suited for
+the IoT. To date (as of October 2017), the performance-critical arithmetic
+operations NTRU already exist in both C and Assembly language.
+
+ The QUASIKOM project is supported by
+[Netidee](http://www.netidee.at "NetIdee Homepage").
