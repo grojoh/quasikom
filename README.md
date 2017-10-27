@@ -50,11 +50,11 @@ post-quantum secure version of the [Datagram Transport Layer Security
 (DTLS)](http://tools.ietf.org/html/rfc6347 "RFC6347") protocol, which is the
 de-facto standard for end-to-end authentication and encryption in the IoT. It
 is also planned to implement a prototype of such a "hardened" DTLS protocol,
-whereby the open-source software [TinyDTLS]
-(http://sourceforge.net/projects/tinydtls/ "TinyDTLS homn page") will be used
-as a starting point. TinyDTLS is aimed at resource-constrained IoT devices
-equipped with an 8, 16, or 32-bit microcontroller that is clocked with a
-frequency of a few MHz. The main task of the project is to implement an
+whereby the open-source software
+[TinyDTLS](http://sourceforge.net/projects/tinydtls "TinyDTLS home page") will
+be used as a starting point. TinyDTLS is aimed at resource-constrained IoT
+devices equipped with an 8, 16, or 32-bit microcontroller that is clocked with
+a frequency of a few MHz. The main task of the project is to implement an
 NTRU-based key establishment mechanism and its integration into TinyDTLS to
 replace the currently used RSA-based key transport and Diffie-Hellman key
 exchange, which can both be broken with a quantum computer.
