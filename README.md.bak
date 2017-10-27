@@ -62,7 +62,7 @@ exchange, which can both be broken with a quantum computer.
 a well-studied lattice-based cryptosystem that combines high computational
 efficiency with relatively short key lengths, which makes it well suited for
 the IoT. To date (as of October 2017), the performance-critical arithmetic
-operations of NTRU already exist in both C and Assembly language.
+operations NTRU already exist in both C and Assembly language.
 
  The QUASIKOM project is supported by
 [Netidee](http://www.netidee.at "NetIdee Homepage").
