@@ -1,0 +1,135 @@
+///////////////////////////////////////////////////////////////////////////////
+// ring_mul_cfadd.s43: Coefficient addition for ring multiplication on MSP.  //
+// This file is part of project QUASIKOM ("Post-Quantum Secure Communication //
+// for the Internet of Things"), supported by Netidee <https://netidee.at/>. //
+// Project repository on github: <https://www.github.com/grojoh/quasikom/>.  //
+// Version 1.0.0 (2017-10-05), see project repository for latest version.    //
+// Author: Dipl.-Ing. Johann Groszschaedl (Secure Things Lab, Austria).      //
+// License: GPLv3 (see LICENSE file), other licenses available on request.   //
+// Copyright (C) 2017 Secure Things Lab <https://www.securethingslab.at/>.   //
+// ------------------------------------------------------------------------- //
+// This program is free software: you can redistribute it and/or modify it   //
+// under the terms of the GNU General Public License as published by the     //
+// Free Software Foundation, either version 3 of the License, or (at your    //
+// option) any later version. This program is distributed in the hope that   //
+// it will be useful, but WITHOUT ANY WARRANTY; without even the implied     //
+// warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the  //
+// GNU General Public License for more details. You should have received a   //
+// copy of the GNU General Public License along with this program. If not,   //
+// see <http://www.gnu.org/licenses/>.                                       //
+///////////////////////////////////////////////////////////////////////////////
+
+
+// Function prototype:
+// -------------------
+// void ring_mul_cfadd(UINT16 *r, const UINT16 *a, UINT16 *b, int alen, 
+//                     int blen);
+// 
+// Description:
+// ------------
+// 
+// Operands:
+// ---------
+// 
+// Version history:
+// ----------------
+
+
+#include "macros.s43"
+
+
+// Define register names
+
+; MSW holds the most significant word of the sum of 'a' and 'b'
+#define MSW R8
+; SUMLO holds the lower part (i.e. 16 LSBs) of the sum of two or more words
+#define SUMLO R9
+; SUMLO holds the upper part (i.e. carries) of the sum of two or more words
+#define SUMHI R10
+; LEN holds 'len' parameter, i.e. the number of words of arrays 'a', 'b', 'r'
+#define LEN R11
+; RPTR holds a pointer for writing words to array 'r'
+#define RPTR R12
+; APTR holds a pointer for loading words from array 'a'
+#define APTR R13
+; BPTR holds a pointer for loading words from array 'b'
+#define BPTR R14
+; CWORD holds parameter 'c', which defines the prime p = 2^(16*'len'-1) - c
+#define CWORD R15
+
+
+NAME ring_mul_cfadd         ; module name
+PUBLIC ring_mul_cfadd       ; make module name visible to other modules
+RSEG CODE                   ; module is relocatable and placed in CODE segment
+ring_mul_cfadd:
+    
+    // Push callee-saved registers on stack, get 5th parameter from stack, and
+    // disable interrupts
+    
+    PUSH_R8_TO_R11          ; macro to push registers R8-R11 (see macros.s43)
+    MOV  OFFSET(4)(SP), LEN ; copy parameter 'len' from stack (see macros.s43)
+    DINT                    ; disable interrupts since we use multiplier
+    NOP                     ; required for DINT
+    
+    // First, we compute sum of the two most significant words of 'a' and 'b',
+    // i.e. a[len-1] and b[len-1]. This sum, which can be up to 17 bits long,
+    // is placed in the SUMHI|SUMLO register pair
+    
+    CLR  SUMHI              ; clear SUMHI register
+    ADD  LEN, LEN           ; double LEN, holds now num of bytes of array 'a'
+    SUB  #2, LEN            ; len-2 is the offset (in bytes) to the MSW of 'a'
+    ADD  LEN, APTR          ; A-pointer now contains the address of a[len-1]
+    MOV  @APTR, SUMLO       ; load a[len-1] to SUMLO via A-pointer
+    SUB  LEN, APTR          ; set A-pointer back to the address of a[0]
+    ADD  LEN, BPTR          ; B-pointer now contains the address of b[len-1]
+    ADD  @BPTR, SUMLO       ; add b[len-1] to SUMLO via B-pointer
+    ADC  SUMHI              ; add carry flag to SUMHI register
+    SUB  LEN, BPTR          ; set B-pointer back to the address of b[0]
+    
+    // Compute the product c*(sum>>15) and msw = sum&0x7FFF. The product can
+    // be up to 17 bits long and is placed in the SUMHI|SUMLO register pair
+    
+    RLA  SUMLO              ; shift SUMLO left; carry flag is now MSB of SUMLO
+    RLC  SUMHI              ; shift SUMHI left via carry; carry flag is now 0
+    RRC  SUMLO              ; shift SUMLO right; MSB of SUMLO is now 0
+    MOV  SUMLO, MSW         ; copy SUMLO to MSW reg (contains now sum&0x7FFF)
+    MOV  SUMHI, &MPY        ; copy SUMHI (contains the 2 MSBs of sum) to &MPY
+    MOV  CWORD, &OP2        ; copy CWORD to &OP2; this starts multiplication
+    MOV  &RESLO, SUMLO      ; copy &RESLO (lower half of product) to SUMLO reg
+    MOV  &RESHI, SUMHI      ; copy &RESHI (upper half of product) to SUMHI reg
+    
+    // In the i-th iteration of the addition loop, the words a[i] and b[i] are
+    // added to the content of the SUMHI|SUMLO register pair. Then, SUMLO is
+    // written to r[i] (via the R-pointer) and the SUMHI|SUMLO register pair
+    // is shifted to the right by 16 bits to prepare for the next iteration.
+    // The loop is iterated only len-1 times since the sum of the two most
+    // significant words (i.e. a[len-1], b[len-1]) was already computed above
+    
+LOOP:
+    ADD  @APTR+, SUMLO      ; add a[i] to SUMLO (with increment) via A-pointer
+    ADC  SUMHI              ; add carry flag to SUMHI register
+    ADD  @BPTR+, SUMLO      ; add b[i] to SUMLO (with increment) via B-pointer
+    ADC  SUMHI              ; add carry flag to SUMHI register
+    MOV  SUMLO, 0(RPTR)     ; write SUMLO to r[i] via R-pointer
+    ADD  #2, RPTR           ; increment R-pointer
+    MOV  SUMHI, SUMLO       ; copy SUMHI register to SUMLO
+    CLR  SUMHI              ; clear SUMHI register
+    SUB  #2, LEN            ; decrement LEN register by 2
+    JNZ  LOOP               ; loop terminates when LEN equals 0
+    
+    // At the end of the loop, R-pointer contains the address of r[len-1]. The
+    // sum of the two most significant words is already in the MSW register;
+    // we just need to add it to the carry in the SUMLO register and write the
+    // result (which can be at most 16 bits long) to r[len-1]
+    
+    ADD  MSW, SUMLO         ; add MSW (i.e. sum&0x7FFF) to SUMLO register
+    MOV  SUMLO, 0(RPTR)     ; write SUMLO to r[len-1] via R-pointer
+    
+    // Enable interrupts and pop callee-saved registers from stack
+    
+    EINT_                   ; macro to enable interrupts (see macros.s43)
+    POP_R11_TO_R8           ; macro to pop registers R11-R8 (see macros.s43)
+    
+    RET_                    ; RET_ is either RET or RETA (see macros.s43)
+    
+END
