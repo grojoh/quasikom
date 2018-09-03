@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// sha256_compress.S: An AVR Assembler impl. of SHA256 compression function. //
+// sha256_compress.S: The compression function of SHA256 in AVR Assembler.   //
 // This file is part of project QUASIKOM ("Post-Quantum Secure Communication //
 // for the Internet of Things"), supported by Netidee <http://netidee.at/>.  //
 // Project repository on GitHub: <http://www.github.com/grojoh/quasikom/>.   //
